@@ -1,1 +1,1 @@
-{"execution":{"main":"index.js"},"deployment":{"stack":"node24","name":"fixed-fee-services","type":"advancedio"}}
+{"execution":{"main":"index.js"},"deployment":{"stack":"node24","name":"fixed_fee_services","type":"advancedio"}}
