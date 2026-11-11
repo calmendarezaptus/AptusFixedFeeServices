@@ -1,15 +1,39 @@
 "use strict";
-// Función del proyecto Honorarios fijos (Catalyst). Esqueleto: por ahora solo lecturas.
-// Todo pasa por ReportesSandbox (core/PrebillApiClient); esta función no escribe en Books.
-// Pendiente (fase de captura): POST/PATCH/DELETE /cargos-fijos y POST /igualas/generar.
+// Función del proyecto Honorarios fijos (Catalyst). La usan la captura y el calendario de
+// honorarios fijos. Todo pasa por ReportesSandbox (core/PrebillApiClient); no escribe en Books.
 import express from 'express';
 import dotenv from 'dotenv';
+import CargoFijoService from './services/CargoFijoService.js';
 import { registerCatalogRoutes } from './core/catalogs.js';
+import { sendError } from './core/http.js';
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+
+const service = req => new CargoFijoService(req.params.organizationId, { req });
+
+app.post('/:organizationId/cargos-fijos', async (req, res) => {
+    try { return res.status(201).json(await service(req).create(req.body)); }
+    catch (error) { return sendError(res, error, 'Error interno guardando el cargo.'); }
+});
+app.get('/:organizationId/cargos-fijos/:cargoId', async (req, res) => {
+    try { return res.json(await service(req).get(req.params.cargoId)); }
+    catch (error) { return sendError(res, error, 'Error interno consultando el cargo.'); }
+});
+app.patch('/:organizationId/cargos-fijos/:cargoId', async (req, res) => {
+    try { return res.json(await service(req).update(req.params.cargoId, req.body)); }
+    catch (error) { return sendError(res, error, 'Error interno actualizando el cargo.'); }
+});
+app.delete('/:organizationId/cargos-fijos/:cargoId', async (req, res) => {
+    try { return res.json(await service(req).remove(req.params.cargoId)); }
+    catch (error) { return sendError(res, error, 'Error interno eliminando el cargo.'); }
+});
+app.post('/:organizationId/igualas/generar', async (req, res) => {
+    try { return res.json(await service(req).generarIgualas(req.body)); }
+    catch (error) { return sendError(res, error, 'Error interno generando las igualas.'); }
+});
 
 // Lecturas permitidas (GET /:organizationId/<catalogo>) y los filtros que se reenvían a la API.
 export const CATALOGS = {

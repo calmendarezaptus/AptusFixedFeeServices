@@ -21,3 +21,19 @@ test('rutas: catálogos permitidos, el resto 404 y sin conexión 503', async () 
         }
     } finally { server.close(); console.error = original; }
 });
+
+test('rutas de escritura: validan sin red; con datos válidos fallan en la conexión (503)', async () => {
+    const server = app.listen(0);
+    const base = `http://127.0.0.1:${server.address().port}/636939444`;
+    const send = (method, path, body) => fetch(base + path, { method, headers: { 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+    const original = console.error; console.error = () => {};
+    try {
+        assert.equal((await send('POST', '/cargos-fijos', { proyecto_id: 'x' })).status, 400);
+        assert.equal((await send('POST', '/igualas/generar', { periodo: '2026-13' })).status, 400);
+        assert.equal((await send('PATCH', '/cargos-fijos/abc', { monto: 1 })).status, 400);
+        let r = await send('POST', '/cargos-fijos', { proyecto_id: 24 });
+        assert.equal(r.status, 503); assert.equal((await r.json()).stage, 'connection');
+        r = await send('POST', '/igualas/generar', { periodo: '2026-11' });
+        assert.equal(r.status, 503);
+    } finally { server.close(); console.error = original; }
+});
